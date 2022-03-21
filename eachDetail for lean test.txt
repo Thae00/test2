@@ -1,0 +1,403 @@
+import 'package:better_player/better_player.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:learn/admin/buy_item.dart';
+import 'package:learn/auth/courses.dart';
+import 'package:learn/carts/cart.dart';
+import 'package:learn/carts/cart_product.dart';
+import 'package:learn/carts/get_student_mail.dart';
+import 'package:learn/carts/invoice_num.dart';
+import 'package:learn/chapter/all_chapter.dart';
+import 'package:learn/courses/teacher_detail.dart';
+import 'package:learn/home/payment_home.dart';
+import 'package:learn/models/name_course.dart';
+import 'package:learn/models/product.dart';
+import 'package:learn/pages/infobar.dart';
+import 'package:provider/provider.dart';
+
+import '../buys/buy.dart';
+
+class EachDetail extends StatefulWidget {
+  String id;
+  NameCourse nameCourse;
+  EachDetail(this.id, this.nameCourse);
+  @override
+  _EachDetailState createState() => _EachDetailState();
+}
+
+class _EachDetailState extends State<EachDetail> {
+  int counter = 0;
+  int updateCounter = 0;
+
+  bool student = false;
+
+  bool name = false;
+
+  @override
+  void initState() {
+    super.initState();
+    checkName();
+    checkRole();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var cart = Provider.of<Cart>(context);
+    return Scaffold(
+      body: Container(
+        child: Column(
+          children: [
+            SizedBox(
+              height: 15,
+            ),
+            Infobar(),
+            AppBar(
+              primary: false,
+              title: Text(widget.nameCourse.name), //appbar title
+              backgroundColor: Color(0xff0A69A9), //appbar background color
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: FutureBuilder(
+                  future: Course().getDetail(widget.id),
+                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshots) {
+                    if (!snapshots.hasData) {
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    if (snapshots.data!.docs.isEmpty) {
+                      return Text('You have no Course.');
+                    }
+                    return ListView.builder(
+                      padding: EdgeInsets.zero,
+                      physics: ScrollPhysics(),
+                      shrinkWrap: true,
+                      itemCount: snapshots.data!.docs.length,
+                      itemBuilder: (BuildContext context, index) {
+                        Product product = Product(
+                          snapshots.data!.docs[index].id,
+                          snapshots.data!.docs[index]['fees'],
+                          snapshots.data!.docs[index]['name'],
+                          snapshots.data!.docs[index]['outline'],
+                          snapshots.data!.docs[index]['type'],
+                        );
+                        return SingleChildScrollView(
+                          child: Container(
+                            child: Column(
+                              children: [
+                                Card(
+                                  elevation: 5,
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    padding: EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.only(bottom: 5),
+                                          child: Text(
+                                            'Course Name',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Divider(
+                                          color: Colors.black,
+                                          height: 1,
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.only(top: 5),
+                                          child: Text(
+                                            product.name,
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 15),
+                                  margin: EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 15),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    color: Color(0xff0A69A9),
+                                  ),
+                                  child: InkWell(
+                                    onTap: () {
+                                      Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) => AllChapter(
+                                                  widget.id,
+                                                  widget.nameCourse.name)));
+                                    },
+                                    child: Text(
+                                      'သင်ခန်းစာများလေ့လာရန်',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Card(
+                                  elevation: 5,
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    padding: EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.only(bottom: 5),
+                                          child: Text(
+                                            'Introduction Video',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Divider(
+                                          color: Colors.black,
+                                          height: 1,
+                                        ),
+                                        SizedBox(
+                                          height: 5,
+                                        ),
+                                        AspectRatio(
+                                          aspectRatio: 16 / 9,
+                                          child: BetterPlayer.network(
+                                            "https://sfux-ext.sfux.info/intro_video/1624974734.mp4",
+                                            betterPlayerConfiguration:
+                                                BetterPlayerConfiguration(
+                                              aspectRatio: 16 / 9,
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Card(
+                                  elevation: 5,
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    padding: EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.only(bottom: 5),
+                                          child: Text(
+                                            'Course Type',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Divider(
+                                          color: Colors.black,
+                                          height: 1,
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.only(top: 5),
+                                          child: Text(
+                                            "${product.type}",
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                              color: Colors.orange,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Card(
+                                  elevation: 5,
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    padding: EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.only(bottom: 5),
+                                          child: Text(
+                                            'Course Fees',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Divider(
+                                          color: Colors.black,
+                                          height: 1,
+                                        ),
+                                        Container(
+                                          padding: EdgeInsets.only(top: 5),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Normal Price',
+                                                style: TextStyle(
+                                                  fontSize: 17,
+                                                ),
+                                              ),
+                                              Text(
+                                                "${product.fees} MMK",
+                                                style: TextStyle(
+                                                  fontSize: 17,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Card(
+                                  elevation: 5,
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ExpansionTile(
+                                          title: Text(
+                                            "Course Outline",
+                                            style: TextStyle(
+                                              fontSize: 18.0,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          children: <Widget>[
+                                            ListTile(
+                                              title: Text(product.outline),
+                                            )
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Card(
+                                  elevation: 5,
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ExpansionTile(
+                                          title: Text(
+                                            "Teacher Profile",
+                                            style: TextStyle(
+                                              fontSize: 18.0,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          children: [
+                                            TeacherDetail(snapshots
+                                                .data!.docs[index]['class_id']),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 15,
+                                ),
+                                Text(product.id),
+                                FutureBuilder(
+                                  future: Course().getBuy(product.id),
+                                  builder: (context,
+                                      AsyncSnapshot<QuerySnapshot> snapshots) {
+                                    if (!snapshots.hasData) {
+                                      return Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    }
+                                    if (snapshots.data!.docs.isEmpty) {
+                                      return Text('You have no Course.');
+                                    }
+                                    return ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      physics: ScrollPhysics(),
+                                      shrinkWrap: true,
+                                      itemCount: snapshots.data!.docs.length,
+                                      itemBuilder: (BuildContext context, index) {
+                                        // if(snapshots.data!.docs[index]['name'] == widget.nameCourse.name && snapshots.data!.docs[index]['email'] == FirebaseAuth.instance.currentUser!.email) {
+                                        //   //return Text('great');
+                                        //   this.name = false;
+                                        // }
+                                        if(snapshots.data!.docs[index]['email'] == FirebaseAuth.instance.currentUser!.email) {
+                                          return Text('ok');
+                                        }
+                                        return Text("${snapshots.data!.docs[index]['email']}");
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  checkRole() async {
+    QuerySnapshot<Map<String, dynamic>> roles = await FirebaseFirestore.instance
+        .collection("old")
+        .where("user_id", isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .get();
+    if (roles.docs[0]['class_role'] == "learn" &&
+        roles.docs[0]['course_name'] == "${widget.nameCourse.name}") {
+      setState(() {
+        this.student = true;
+      });
+    }
+  }
+
+  checkName() async {
+    if(widget.nameCourse.name == widget.nameCourse.name) {
+      setState(() {
+        this.name = true;
+      });
+    }
+  }
+}
